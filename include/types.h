@@ -34,16 +34,39 @@ struct DownloadPart{
     }
 
     // 移动赋值运算符函数
+    DownloadPart& operator=(DownloadPart&& other) noexcept
+    {
+        // 防止自赋值
+        if(this != &other)
+        {
+            start = other.start;
+            end = other.end;
+            downloaded.store(other.downloaded.load());
+            finished.store(other.finished.load());
+            success.store(other.success.load());
+        }
+        return *this;
+    }
     
+};
 
+struct HeaderInfo{
+    // 文件总长度：字节
+    long long content_length = 0;
+    // 服务器是否支持范围请求（即是否能分段下载）
+    bool accept_ranges = false;
+};
 
-
-
-
-
-
-
+struct WriteContext{
+    // 文件描述符
+    int fd = -1;
+    // 本次写入的字节偏移量
+    long long offset = 0;
+    // 关联的下载分段
+    DownloadPart* part = nullptr;
+    // 全局已下载总字节数（原子类型指针，用于统计整体进度）
+    std::atomic<long long>* total_downloaded = nullptr;
 };
 
 
-};
+} // namespace dowmloader
